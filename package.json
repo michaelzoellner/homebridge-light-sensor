@@ -1,20 +1,18 @@
 {
-  "name": "homebridge-daylight",
-  "version": "0.1.1",
-  "description": "Daylight plugin for homebridge: https://github.com/nfarina/homebridge",
+  "name": "homebridge-light-sensor",
+  "version": "0.1",
+  "description": "Light sensor plugin for homebridge: https://github.com/nfarina/homebridge forked from https://github.com/yungsters/homebridge-daylight",
   "license": "MIT",
   "keywords": [
     "homebridge-plugin"
   ],
-  "repository": "yungsters/homebridge-daylight",
+  "repository": "michaelzoellner/homebridge-light-sensor",
   "bugs": {
-    "url": "http://github.com/yungsters/homebridge-daylight/issues"
+    "url": "http://github.com/michaelzoellner/homebridge-daylight/issues"
   },
   "engines": {
     "node": ">=4.2.0",
     "homebridge": ">=0.2.0"
   },
-  "dependencies": {
-    "suncalc": "^1.7.0"
-  }
+  "dependencies": {}
 }

@@ -1,81 +1,91 @@
 'use strict';
 
-const suncalc = require('suncalc');
+// const suncalc = require('suncalc');
+const DataCache = require('./lib/data_cache');
+const http = require('http');
 
 module.exports = homebridge => {
   const Characteristic = homebridge.hap.Characteristic;
   const Service = homebridge.hap.Service;
 
   // Frequency of updates during transition periods.
-  const UPDATE_FREQUENCY = 1000;
+  const UPDATE_FREQUENCY = 5000; // change necessary
 
-  class DaylightAccessory {
+  class LightSensorAccessory {
     constructor(log, config) {
-      if (!config.location ||
-          !Number.isFinite(config.location.lat) ||
-          !Number.isFinite(config.location.lng)) {
-        throw new Error('Invalid or missing `location` configuration.');
+      this.log = log;
+      if (!config.jsonURL) {
+        throw new Error('Invalid or missing `jsonURL` configuration.');
       }
 
-      this.location = config.location;
+      this.jsonURL = config.jsonURL;
       this.service = new Service.LightSensor(config.name);
       this.updateAmbientLightLevel();
     }
 
+    loadCurrentSensorData(jsonURL, callback) {
+
+      http.get(jsonURL, (res) => {
+        const { statusCode } = res;
+        const contentType = res.headers['content-type'];
+
+        let error;
+        if (statusCode !== 200) {
+          error = new Error('Request Failed.\n' +
+          `Status Code: ${statusCode}`);
+        } else if (!/^application\/json/.test(contentType)) {
+          error = new Error('Invalid content-type.\n' +
+          `Expected application/json but received ${contentType}`);
+        }
+        if (error) {
+          res.resume();
+          callback(error, null);
+          return;
+        }
+
+        res.setEncoding('utf8');
+        let rawData = '';
+        let sensorValue = 0.0;
+        res.on('data', (chunk) => { rawData += chunk; });
+        res.on('end', () => {
+          try {
+            rawData = rawData.substring(rawData.indexOf("=") + 1);
+            rawData = rawData.split(' ')[0];
+            sensorValue = parseFloat(rawData)
+            callback(null, sensorValue);
+          } catch (error) {
+            callback(error, null);
+          }
+        });
+      }).on('error', (error) => {
+        callback(error, null);
+      });
+    }
+
     updateAmbientLightLevel() {
-      const nowDate = new Date();
-      const now = nowDate.getTime();
+      var sensorValue = 0.0;
+      this.loadCurrentSensorData(this.jsonURL, (error, sensorValue) => {
+        if (error) {
+          return;
+        }
 
-      const sunDates = suncalc.getTimes(
-        nowDate,
-        this.location.lat,
-        this.location.lng
-      );
-      const times = {
-        sunrise: sunDates.sunrise.getTime(),
-        sunriseEnd: sunDates.sunriseEnd.getTime(),
-        sunsetStart: sunDates.sunsetStart.getTime(),
-        sunset: sunDates.sunset.getTime(),
-      };
+        var measres = 1000.0 * ((1024.0/sensorValue) - 1.0);
+        //var photores = ((sensorValue * 3.3)/1.024)/(3.3*(1.0-sensorValue/1024.0));
+        //this.log(photores);
+        this.log("LightSensor: Measured resistance ");
+        this.log(measres);
+        var lightLevel = Math.pow(10.0,5.0 - Math.log10(measres));
+        this.log("LightSensor: Calculated light density ");
+        this.log(lightLevel);
 
-      let lightRatio;
-      let nextUpdate;
 
-      if (
-        now > times.sunrise &&
-        now < times.sunriseEnd
-      ) {
-        lightRatio =
-          (now - times.sunrise) /
-          (times.sunriseEnd - times.sunrise);
-        nextUpdate = now + UPDATE_FREQUENCY;
-      } else if (
-        now > times.sunriseEnd &&
-        now < times.sunsetStart
-      ) {
-        lightRatio = 1;
-        nextUpdate = times.sunsetStart;
-      } else if (
-        now > times.sunsetStart &&
-        now < times.sunset
-      ) {
-        lightRatio =
-          (times.sunset - now) /
-          (times.sunset - times.sunsetStart);
-        nextUpdate = now + UPDATE_FREQUENCY;
-      } else {
-        lightRatio = 0;
-        nextUpdate = times.sunrise;
-      }
+        this.service.setCharacteristic(
+          Characteristic.CurrentAmbientLightLevel,
+          lightLevel);
 
-      // Range (in lux) from 0.0001 to 100000 in increments of 0.0001.
-      const lightLevel = Math.round(1 + lightRatio * 999999999) / 10000;
-      this.service.setCharacteristic(
-        Characteristic.CurrentAmbientLightLevel,
-        lightLevel
-      );
+      });
 
-      setTimeout(this.updateAmbientLightLevel.bind(this), nextUpdate - now);
+      setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY);
     }
 
     getServices() {
@@ -83,5 +93,5 @@ module.exports = homebridge => {
     }
   }
 
-  homebridge.registerAccessory('homebridge-daylight', 'Daylight', DaylightAccessory);
+  homebridge.registerAccessory('homebridge-light-sensor', 'LightSensor', LightSensorAccessory);
 };
