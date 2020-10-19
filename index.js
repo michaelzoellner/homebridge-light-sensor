@@ -73,7 +73,7 @@ module.exports = homebridge => {
         //var photores = ((sensorValue * 3.3)/1.024)/(3.3*(1.0-sensorValue/1024.0));
         //this.log(photores);
         var lightLevel = Math.pow(10.0,1.33*(5.0 - Math.log10(measres)));
-        let msg = "LightSensor: Calculated light density " + ToString(lightLevel);
+        let msg = "LightSensor: Calculated light density is " + lightLevel + " lx";
         this.log(msg);
 
 
