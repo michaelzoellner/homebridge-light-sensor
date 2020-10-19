@@ -9,7 +9,7 @@ module.exports = homebridge => {
   const Service = homebridge.hap.Service;
 
   // Frequency of updates during transition periods.
-  const UPDATE_FREQUENCY = 10000; // change necessary
+  const UPDATE_FREQUENCY = 60000; // change necessary
 
   class LightSensorAccessory {
     constructor(log, config) {
@@ -72,11 +72,9 @@ module.exports = homebridge => {
         var measres = 1000.0 * ((1024.0/sensorValue) - 1.0);
         //var photores = ((sensorValue * 3.3)/1.024)/(3.3*(1.0-sensorValue/1024.0));
         //this.log(photores);
-        this.log("LightSensor: Measured resistance ");
-        this.log(measres);
         var lightLevel = Math.pow(10.0,1.33*(5.0 - Math.log10(measres)));
-        this.log("LightSensor: Calculated light density ");
-        this.log(lightLevel);
+        let msg = "LightSensor: Calculated light density " + ToString(lightLevel);
+        this.log(msg);
 
 
         this.service.setCharacteristic(
