@@ -2,17 +2,31 @@
 
 // const suncalc = require('suncalc');
 const DataCache = require('./lib/data_cache');
+var moment = require('moment');
 const http = require('http');
 
 module.exports = homebridge => {
   const Characteristic = homebridge.hap.Characteristic;
   const Service = homebridge.hap.Service;
 
-  class LastActivationCharacteristic extends Characteristic {
+  class WifiSignalStrength extends Characteristic {
         constructor(accessory) {
-            super('LastActivation', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
+            super('Signal strength', 'E863F11A-079E-48FF-8F27-9C2605A29F99');
             this.setProps({
-                format: Characteristic.Formats.UINT32,
+                format: Characteristic.Formats.UINT16,
+                unit: Characteristic.Units.PERCENTAGE,
+                perms: [
+                    Characteristic.Perms.READ,
+                    Characteristic.Perms.NOTIFY
+                ]
+            });
+        }
+    }
+  class DataAge extends Characteristic {
+        constructor(accessory) {
+            super('Last data received before', 'E863F11A-079E-48FF-8F27-9C2605A29F98');
+            this.setProps({
+                format: Characteristic.Formats.UINT16,
                 unit: Characteristic.Units.SECONDS,
                 perms: [
                     Characteristic.Perms.READ,
@@ -33,15 +47,36 @@ module.exports = homebridge => {
       }
 
       this.jsonURL = config.jsonURL;
+      this.parsedData = [];
       this.lastReadingTime = moment().unix();
+      this.lastSignalStrength = 0;
       this.service = new Service.LightSensor(config.name);
 
-      this.service.addCharacteristic(LastActivationCharacteristic);
+      this.service.addCharacteristic(WifiSignalStrength);
+      this.service
+        .getCharacteristic(WifiSignalStrength)
+        .on('get', this.getSignalStrength.bind(this));
+
+      this.service.addCharacteristic(DataAge);
+      this.service
+        .getCharacteristic(DataAge)
+        .on('get', this.getDataAge.bind(this));
 
       this.updateAmbientLightLevel();
     }
 
+    getSignalStrength(callback) {
+      this.log('I was here.');
+      var signalStrengthDB = this.parsedData["wifiSignalStrength"];
+      var signalStrengthPerc = signalStrengthDB + 130;
+      callback(null,signalStrengthPerc);
+    }
 
+    getDataAge(callback) {
+      this.log('I was here as well.');
+      var dataAge = moment().unix() - this.lastReadingTime;
+      callback(null,dataAge);
+    }
 
     loadCurrentSensorData(jsonURL, callback) {
 
@@ -70,6 +105,8 @@ module.exports = homebridge => {
         res.on('end', () => {
           try {
             const parsedData = JSON.parse(rawData);
+            this.lastReadingTime = moment().unix();
+            this.parsedData = parsedData;
             callback(null, parsedData);
           } catch (error) {
             callback(error, null);
@@ -100,9 +137,6 @@ module.exports = homebridge => {
             Characteristic.CurrentAmbientLightLevel,
             lightLevel);
         }
-        this.service.setCharacteristic(
-          Characteristic.LastActivationCharacteristic,
-          moment().unix() - this.lastReadingTime);
       });
 
       setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY);
