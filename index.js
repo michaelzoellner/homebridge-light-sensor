@@ -81,7 +81,7 @@ module.exports = homebridge => {
     }
 
     updateAmbientLightLevel() {
-      var parsedData = []];
+      var parsedData = [];
       this.loadCurrentSensorData(this.jsonURL, (error, parsedData) => {
         if !(error) {
           var sensorValue = parsedData["sensorValue"];
