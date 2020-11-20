@@ -49,9 +49,8 @@ module.exports = homebridge => {
         res.on('data', (chunk) => { rawData += chunk; });
         res.on('end', () => {
           try {
-            rawData = rawData.substring(rawData.indexOf("=") + 1);
-            rawData = rawData.split(' ')[0];
-            sensorValue = parseFloat(rawData)
+            const parsedData = JSON.parse(rawData);
+            sensorValue = parsedData["sensorValue"];
             callback(null, sensorValue);
           } catch (error) {
             callback(error, null);
