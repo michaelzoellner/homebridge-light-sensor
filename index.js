@@ -8,6 +8,20 @@ module.exports = homebridge => {
   const Characteristic = homebridge.hap.Characteristic;
   const Service = homebridge.hap.Service;
 
+  class LastActivationCharacteristic extends Characteristic {
+        constructor(accessory) {
+            super('LastActivation', 'E863F11A-079E-48FF-8F27-9C2605A29F52');
+            this.setProps({
+                format: Characteristic.Formats.UINT32,
+                unit: Characteristic.Units.SECONDS,
+                perms: [
+                    Characteristic.Perms.READ,
+                    Characteristic.Perms.NOTIFY
+                ]
+            });
+        }
+    }
+
   // Frequency of updates during transition periods.
   const UPDATE_FREQUENCY = 60000; // change necessary
 
@@ -19,9 +33,15 @@ module.exports = homebridge => {
       }
 
       this.jsonURL = config.jsonURL;
+      this.lastReadingTime = moment().unix();
       this.service = new Service.LightSensor(config.name);
+
+      this.service.addCharacteristic(LastActivationCharacteristic);
+
       this.updateAmbientLightLevel();
     }
+
+
 
     loadCurrentSensorData(jsonURL, callback) {
 
@@ -50,8 +70,7 @@ module.exports = homebridge => {
         res.on('end', () => {
           try {
             const parsedData = JSON.parse(rawData);
-            sensorValue = parsedData["sensorValue"];
-            callback(null, sensorValue);
+            callback(null, parsedData);
           } catch (error) {
             callback(error, null);
           }
@@ -62,24 +81,28 @@ module.exports = homebridge => {
     }
 
     updateAmbientLightLevel() {
-      var sensorValue = 0.0;
-      this.loadCurrentSensorData(this.jsonURL, (error, sensorValue) => {
-        if (error) {
-          return;
+      var parsedData = []];
+      this.loadCurrentSensorData(this.jsonURL, (error, parsedData) => {
+        if !(error) {
+          var sensorValue = parsedData["sensorValue"];
+
+          var measres = 1000.0 * ((1024.0/sensorValue) - 1.0);
+          //var photores = ((sensorValue * 3.3)/1.024)/(3.3*(1.0-sensorValue/1024.0));
+          //this.log(photores);
+          var lightLevel = Math.pow(10.0,1.33*(5.0 - Math.log10(measres)));
+          this.lastReadingTime = moment().unix();
+
+          let msg = "LightSensor: Calculated light density is " + lightLevel + " lx";
+          this.log(msg);
+
+
+          this.service.setCharacteristic(
+            Characteristic.CurrentAmbientLightLevel,
+            lightLevel);
         }
-
-        var measres = 1000.0 * ((1024.0/sensorValue) - 1.0);
-        //var photores = ((sensorValue * 3.3)/1.024)/(3.3*(1.0-sensorValue/1024.0));
-        //this.log(photores);
-        var lightLevel = Math.pow(10.0,1.33*(5.0 - Math.log10(measres)));
-        let msg = "LightSensor: Calculated light density is " + lightLevel + " lx";
-        this.log(msg);
-
-
         this.service.setCharacteristic(
-          Characteristic.CurrentAmbientLightLevel,
-          lightLevel);
-
+          Characteristic.LastActivationCharacteristic,
+          moment().unix() - this.lastReadingTime);
       });
 
       setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY);
