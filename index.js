@@ -66,15 +66,15 @@ module.exports = homebridge => {
     }
 
     getSignalStrength(callback) {
-      this.log('I was here.');
       var signalStrengthDB = this.parsedData["wifiSignalStrength"];
       var signalStrengthPerc = signalStrengthDB + 130;
+      this.log('Signal strength is %s dB or %s %.', signalStrengthDB, signalStrengthPerc);
       callback(null,signalStrengthPerc);
     }
 
     getDataAge(callback) {
-      this.log('I was here as well.');
       var dataAge = moment().unix() - this.lastReadingTime;
+      this.log('Last data was received %s s ago.', dataAge);
       callback(null,dataAge);
     }
 
