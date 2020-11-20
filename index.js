@@ -83,7 +83,7 @@ module.exports = homebridge => {
     updateAmbientLightLevel() {
       var parsedData = [];
       this.loadCurrentSensorData(this.jsonURL, (error, parsedData) => {
-        if !(error) {
+        if (!error) {
           var sensorValue = parsedData["sensorValue"];
 
           var measres = 1000.0 * ((1024.0/sensorValue) - 1.0);
