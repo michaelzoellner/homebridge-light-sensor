@@ -120,7 +120,9 @@ module.exports = homebridge => {
     updateAmbientLightLevel() {
       var parsedData = [];
       this.loadCurrentSensorData(this.jsonURL, (error, parsedData) => {
-        if (!error) {
+        if (error) {
+          setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY_FAIL);
+        } else {
           var sensorValue = parsedData["sensorValue"];
 
           var measres = 1000.0 * ((1024.0/sensorValue) - 1.0);
@@ -140,7 +142,6 @@ module.exports = homebridge => {
           return
         }
       });
-      setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY_FAIL);
     }
 
     getServices() {
