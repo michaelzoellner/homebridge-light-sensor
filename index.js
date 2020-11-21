@@ -36,8 +36,8 @@ module.exports = homebridge => {
         }
     }
 
-  // Frequency of updates during transition periods.
-  const UPDATE_FREQUENCY = 60000; // change necessary
+  const UPDATE_FREQUENCY = 60000;
+  const UPDATE_FREQUENCY_FAIL = 5000;
 
   class LightSensorAccessory {
     constructor(log, config) {
@@ -136,10 +136,11 @@ module.exports = homebridge => {
           this.service.setCharacteristic(
             Characteristic.CurrentAmbientLightLevel,
             lightLevel);
+          setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY);
+          return
         }
       });
-
-      setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY);
+      setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY_FAIL);
     }
 
     getServices() {
