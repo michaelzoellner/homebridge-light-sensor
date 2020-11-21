@@ -51,6 +51,9 @@ module.exports = homebridge => {
       this.lastReadingTime = moment().unix();
       this.lastSignalStrength = 0;
       this.service = new Service.LightSensor(config.name);
+      this.service
+        .getCharacteristic(Characteristic.CurrentAmbientLightLevel)
+        .on('get', this.updateAmbientLightLevel.bind(this));
 
       this.service.addCharacteristic(WifiSignalStrength);
       this.service
