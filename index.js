@@ -46,6 +46,8 @@ module.exports = homebridge => {
         throw new Error('Invalid or missing `jsonURL` configuration.');
       }
 
+      this.updateFrequency = config["updateFrequency"] || UPDATE_FREQUENCY;
+      this.updateFrequencyFail = config["updateFrequencyFail"] || UPDATE_FREQUENCY_FAIL;
       this.jsonURL = config.jsonURL;
       this.parsedData = [];
       this.lastReadingTime = moment().unix();
@@ -121,7 +123,7 @@ module.exports = homebridge => {
       var parsedData = [];
       this.loadCurrentSensorData(this.jsonURL, (error, parsedData) => {
         if (error) {
-          setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY_FAIL);
+          setTimeout(this.updateAmbientLightLevel.bind(this), this.updateFrequencyFail);
         } else {
           var sensorValue = parsedData["sensorValue"];
 
@@ -132,13 +134,16 @@ module.exports = homebridge => {
           this.lastReadingTime = moment().unix();
 
           let msg = "LightSensor: Calculated light density is " + lightLevel + " lx";
-          this.log(msg);
+          this.log.debug(msg);
 
 
           this.service.setCharacteristic(
             Characteristic.CurrentAmbientLightLevel,
             lightLevel);
-          setTimeout(this.updateAmbientLightLevel.bind(this), UPDATE_FREQUENCY);
+          this.service.getCharacteristic(Characteristic.WifiSignalStrength).updateValue(this.getSignalStrength.bind(this));
+          this.service.getCharacteristic(Characteristic.DataAge).updateValue(this.getDataAge.bind(this));
+            
+          setTimeout(this.updateAmbientLightLevel.bind(this), this.updateFrequency);
           return
         }
       });
