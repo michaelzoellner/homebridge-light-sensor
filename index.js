@@ -50,6 +50,7 @@ module.exports = homebridge => {
       this.updateFrequencyFail = config["updateFrequencyFail"] || UPDATE_FREQUENCY_FAIL;
       this.jsonURL = config.jsonURL;
       this.parsedData = [];
+      this.timeoutObj = [];
       this.lastReadingTime = moment().unix();
       this.lastSignalStrength = 0;
       this.service = new Service.LightSensor(config.name);
@@ -120,10 +121,15 @@ module.exports = homebridge => {
     }
 
     updateAmbientLightLevel() {
+      if (this.timeoutObj) {
+        clearTimeout(this.timeoutObj);
+      }
+
       var parsedData = [];
       this.loadCurrentSensorData(this.jsonURL, (error, parsedData) => {
         if (error) {
           setTimeout(this.updateAmbientLightLevel.bind(this), this.updateFrequencyFail);
+          this.service.getCharacteristic(DataAge).updateValue(this.getDataAge.bind(this));
         } else {
           var sensorValue = parsedData["sensorValue"];
 
@@ -140,10 +146,10 @@ module.exports = homebridge => {
           this.service.setCharacteristic(
             Characteristic.CurrentAmbientLightLevel,
             lightLevel);
-          this.service.getCharacteristic(Characteristic.WifiSignalStrength).updateValue(this.getSignalStrength.bind(this));
-          this.service.getCharacteristic(Characteristic.DataAge).updateValue(this.getDataAge.bind(this));
-            
-          setTimeout(this.updateAmbientLightLevel.bind(this), this.updateFrequency);
+          this.service.getCharacteristic(WifiSignalStrength).updateValue(this.getSignalStrength.bind(this));
+          this.service.getCharacteristic(DataAge).updateValue(this.getDataAge.bind(this));
+
+          this.timeoutObj = setTimeout(this.updateAmbientLightLevel.bind(this), this.updateFrequency);
           return
         }
       });
