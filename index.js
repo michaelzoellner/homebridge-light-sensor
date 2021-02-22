@@ -146,9 +146,15 @@ module.exports = homebridge => {
           this.service.setCharacteristic(
             Characteristic.CurrentAmbientLightLevel,
             lightLevel);
-          let wifistrength = this.getSignalStrength.bind(this);
+          this.getSignalStrength(error,sigstrength) => {
+            if (error) {
+              this.service.getCharacteristic(WifiSignalStrength).updateValue(0);
+            } else {
+              this.service.getCharacteristic(WifiSignalStrength).updateValue(sigstrength);
+            }  
+          }
           this.log(wifistrength);
-          this.service.getCharacteristic(WifiSignalStrength).updateValue(this.getSignalStrength.bind(this));
+          // this.service.getCharacteristic(WifiSignalStrength).updateValue(this.getSignalStrength.bind(this));
           this.service.getCharacteristic(DataAge).updateValue(this.getDataAge.bind(this));
 
           this.timeoutObj = setTimeout(this.updateAmbientLightLevel.bind(this), this.updateFrequency);
