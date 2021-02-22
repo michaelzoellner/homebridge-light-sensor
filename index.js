@@ -150,10 +150,10 @@ module.exports = homebridge => {
             if (error) {
               this.service.getCharacteristic(WifiSignalStrength).updateValue(0);
             } else {
+              this.log(wifistrength);
               this.service.getCharacteristic(WifiSignalStrength).updateValue(sigstrength);
-            }  
+            }
           }
-          this.log(wifistrength);
           // this.service.getCharacteristic(WifiSignalStrength).updateValue(this.getSignalStrength.bind(this));
           this.service.getCharacteristic(DataAge).updateValue(this.getDataAge.bind(this));
 
