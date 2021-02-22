@@ -68,8 +68,8 @@ module.exports = homebridge => {
       this.updateAmbientLightLevel();
     }
 
-    getSignalStrength(callback) {
-      var signalStrengthDB = this.parsedData["wifiSignalStrength"];
+    getSignalStrength(parsedData, callback) {
+      var signalStrengthDB = parsedData["wifiSignalStrength"];
       var signalStrengthPerc = signalStrengthDB + 130;
       this.log.debug('Signal strength is %s dB or %s %.', signalStrengthDB, signalStrengthPerc);
       callback(null,signalStrengthPerc);
@@ -146,14 +146,14 @@ module.exports = homebridge => {
           this.service.setCharacteristic(
             Characteristic.CurrentAmbientLightLevel,
             lightLevel);
-          this.getSignalStrength((error,sigstrength)) => {
+          this.getSignalStrength(this.parsedData, (error,sigstrength) => {
             if (error) {
               this.service.getCharacteristic(WifiSignalStrength).updateValue(0);
             } else {
               this.log(wifistrength);
               this.service.getCharacteristic(WifiSignalStrength).updateValue(sigstrength);
             }
-          }
+          });
           // this.service.getCharacteristic(WifiSignalStrength).updateValue(this.getSignalStrength.bind(this));
           this.service.getCharacteristic(DataAge).updateValue(this.getDataAge.bind(this));
 
