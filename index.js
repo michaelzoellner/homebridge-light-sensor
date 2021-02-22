@@ -71,7 +71,7 @@ module.exports = homebridge => {
     getSignalStrength(callback) {
       var signalStrengthDB = this.parsedData["wifiSignalStrength"];
       var signalStrengthPerc = signalStrengthDB + 130;
-      this.debug('Signal strength is %s dB or %s %.', signalStrengthDB, signalStrengthPerc);
+      this.log('Signal strength is %s dB or %s %.', signalStrengthDB, signalStrengthPerc);
       callback(null,signalStrengthPerc);
     }
 
