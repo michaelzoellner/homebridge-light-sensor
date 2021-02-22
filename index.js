@@ -146,7 +146,7 @@ module.exports = homebridge => {
           this.service.setCharacteristic(
             Characteristic.CurrentAmbientLightLevel,
             lightLevel);
-          this.getSignalStrength(error,sigstrength) => {
+          this.getSignalStrength((error,sigstrength)) => {
             if (error) {
               this.service.getCharacteristic(WifiSignalStrength).updateValue(0);
             } else {
